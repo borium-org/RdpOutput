@@ -24,7 +24,6 @@ namespace RdpOutput
 				text_init(max_text, max_errors, max_warnings, tab_width);
 				scan_init(case_insensitive, newline_visible, show_skips, symbol_echo, token_names);
 
-				SetInitialise();
 				LoadKeywords();
 			}
 
@@ -40,7 +39,8 @@ namespace RdpOutput
 							{
 								UsingDirective();
 							}
-							if (!scan_test("rdp_CompilationUnit_1", SCAN_P_ID, null)) break;
+							if (!scan_test("rdp_CompilationUnit_1", SCAN_P_ID, null))
+								break;
 						}
 					}
 					if (scan_test("rdp_CompilationUnit_3", RDP_T_Entity, null))
@@ -50,7 +50,8 @@ namespace RdpOutput
 							{
 								EntityDeclaration();
 							}
-							if (!scan_test("rdp_CompilationUnit_3", RDP_T_Entity, null)) break;
+							if (!scan_test("rdp_CompilationUnit_3", RDP_T_Entity, null))
+								break;
 						}
 					}
 					scan_test_set("CompilationUnit", CompilationUnit_stop, CompilationUnit_stop);
@@ -97,7 +98,8 @@ namespace RdpOutput
 								scan_();
 								Identifier();
 							}
-							if (!scan_test("rdp_UsingDirective_1", RDP_T_46 /* . */, null)) break;
+							if (!scan_test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
+								break;
 						}
 					}
 					scan_test("UsingDirective", RDP_T_59 /* ; */, UsingDirective_stop);
@@ -118,30 +120,16 @@ namespace RdpOutput
 				scan_load_keyword("Entity", null, RDP_T_Entity, SCAN_P_IGNORE);
 			}
 
-			private static readonly Set Char_stop = new Set();
-			private static readonly Set Comment_first = new Set();
-			private static readonly Set Comment_stop = new Set();
-			private static readonly Set CompilationUnit_first = new Set();
-			private static readonly Set CompilationUnit_stop = new Set();
-			private static readonly Set EntityDeclaration_stop = new Set();
-			private static readonly Set Identifier_stop = new Set();
-			private static readonly Set String_stop = new Set();
-			private static readonly Set UsingDirective_stop = new Set();
-			private static readonly Set rdp_CompilationUnit_4_first = new Set();
-
-			private void SetInitialise()
-			{
-				Char_stop.assignList(SCAN_P_EOF);
-				Comment_first.assignList(RDP_T_4742 /* / * */, RDP_T_4747 /* // */);
-				Comment_stop.assignList(SCAN_P_EOF);
-				CompilationUnit_first.assignList(SCAN_P_ID, RDP_T_Entity);
-				CompilationUnit_stop.assignList(SCAN_P_EOF);
-				EntityDeclaration_stop.assignList(SCAN_P_EOF, RDP_T_Entity);
-				Identifier_stop.assignList(SCAN_P_EOF, RDP_T_46 /* . */, RDP_T_59 /* ; */);
-				String_stop.assignList(SCAN_P_EOF);
-				UsingDirective_stop.assignList(SCAN_P_ID, SCAN_P_EOF, RDP_T_Entity);
-				rdp_CompilationUnit_4_first.assignList(SCAN_P_ID, RDP_T_Entity);
-			}
+			private static readonly Set Char_stop = new Set(SCAN_P_EOF);
+			private static readonly Set Comment_first = new Set(RDP_T_4742 /* / * */, RDP_T_4747 /* // */);
+			private static readonly Set Comment_stop = new Set(SCAN_P_EOF);
+			private static readonly Set CompilationUnit_first = new Set(SCAN_P_ID, RDP_T_Entity);
+			private static readonly Set CompilationUnit_stop = new Set(SCAN_P_EOF);
+			private static readonly Set EntityDeclaration_stop = new Set(SCAN_P_EOF, RDP_T_Entity);
+			private static readonly Set Identifier_stop = new Set(SCAN_P_EOF, RDP_T_46 /* . */, RDP_T_59 /* ; */);
+			private static readonly Set String_stop = new Set(SCAN_P_EOF);
+			private static readonly Set UsingDirective_stop = new Set(SCAN_P_ID, SCAN_P_EOF, RDP_T_Entity);
+			private static readonly Set rdp_CompilationUnit_4_first = new Set(SCAN_P_ID, RDP_T_Entity);
 		}
 
 		internal static string rdp_sourcefilename; // current source file name

@@ -697,7 +697,7 @@ namespace RdpOutput
 		{
 			if (linenumber != 0)
 			{
-				string s = $"{linenumber:N6}: ";
+				string s = $"{linenumber, 6}: ";
 				messages.Write(s);
 			}
 			else

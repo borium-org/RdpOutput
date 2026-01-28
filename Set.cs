@@ -6,6 +6,15 @@ namespace RdpOutput
 {
 	internal class Set
 	{
+		internal Set(params int[] bits)
+		{
+			clear();
+			foreach (int bit in bits)
+			{
+				set(bit);
+			}
+		}
+
 #if false
 		internal interface Indent
 		{
@@ -43,15 +52,6 @@ namespace RdpOutput
 		{
 			clear();
 			set(element);
-		}
-
-		internal void assignList(params int[] bits)
-		{
-			clear();
-			foreach (int bit in bits)
-			{
-				set(bit);
-			}
 		}
 
 		/// <summary>
