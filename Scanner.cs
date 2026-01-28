@@ -595,7 +595,7 @@ namespace RdpOutput
 			if (scan_sequence_running_number != text_sequence_number())
 				scan_insert_comment_block(null, 0, text_sequence_number());
 			scan_sequence_running_number = text_sequence_number();
-			text_scan_data.sourcefilename = rdp_sourcefilename;
+			text_scan_data.sourcefilename = sourceFileName;
 			text_scan_data.line_number = text_line_number();
 			if (scan_symbol_echo)
 			{

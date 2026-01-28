@@ -518,17 +518,18 @@ namespace RdpOutput
 			return message.Length + 1;
 		}
 
-		internal static TextReader text_open(string s)
+		internal static TextReader text_open(TextReader textReader, string s)
 		{
-			TextReader handle = null;
-			try
-			{
-				handle = s.Equals("-") ? Console.In : new StreamReader(s);
-			}
-			catch (FileNotFoundException)
-			{
-				handle = null;
-			}
+			//TextReader handle = null;
+			//try
+			//{
+			//	handle = s.Equals("-") ? Console.In : new StreamReader(s);
+			//}
+			//catch (FileNotFoundException)
+			//{
+			//	handle = null;
+			//}
+			TextReader handle = textReader;
 			TextReader old = file;
 			if (handle != null) // we found a file
 			{

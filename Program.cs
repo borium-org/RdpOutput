@@ -1,4 +1,6 @@
-﻿using static RdpOutput.CRT;
+﻿using System;
+using System.IO;
+using static RdpOutput.CRT;
 using static RdpOutput.Scanner;
 using static RdpOutput.Text;
 using static RdpOutput.Text.TextMessageType;
@@ -130,9 +132,23 @@ namespace RdpOutput
 			private static readonly Set String_stop = new Set(SCAN_P_EOF);
 			private static readonly Set UsingDirective_stop = new Set(SCAN_P_ID, SCAN_P_EOF, RDP_T_Entity);
 			private static readonly Set rdp_CompilationUnit_4_first = new Set(SCAN_P_ID, RDP_T_Entity);
+
+			internal bool Open(StreamReader streamReader, string sourceFileName)
+			{
+				if (text_open(streamReader, sourceFileName) == null)
+					return false;
+				text_get_char();
+				scan_();
+				return true;
+			}
+
+			internal void Compile()
+			{
+				CompilationUnit();
+			}
 		}
 
-		internal static string rdp_sourcefilename; // current source file name
+		internal static string sourceFileName; // current source file name
 
 		private static string[] rdp_tokens = { "IGNORE", "ID", "INTEGER", "REAL", "CHAR", "CHAR_ESC", "STRING",
 			"STRING_ESC", "COMMENT", "COMMENT_VISIBLE", "COMMENT_NEST", "COMMENT_NEST_VISIBLE", "COMMENT_LINE",
@@ -144,7 +160,7 @@ namespace RdpOutput
 			{
 				args = new string[] { "Tests\\test.txt" };
 			}
-			rdp_sourcefilename = args[0];
+			sourceFileName = args[0];
 
 			long rdp_start_time = CurrentTimeMillis();
 			int rdp_textsize = 350000; // size of scanner text array
@@ -152,16 +168,15 @@ namespace RdpOutput
 
 			Compiler compiler = new Compiler(rdp_textsize, 25, 100, rdp_tabwidth, false, false, false, false, rdp_tokens);
 
-			if (text_open(rdp_sourcefilename) == null)
-				throw new System.Exception("unable to open source file");
-
-			text_get_char();
-			scan_();
-
-			compiler.CompilationUnit();
+			using (StreamReader streamReader = new StreamReader(sourceFileName))
+			{
+				if (!compiler.Open(streamReader, sourceFileName))
+					throw new Exception("unable to open source file");
+				compiler.Compile();
+			}
 
 			if (text_total_errors() != 0)
-				text_message(TEXT_FATAL, $"{text_total_errors()} error{(text_total_errors() == 1 ? "" : "s")} detected in source file {rdp_sourcefilename}\n");
+				text_message(TEXT_FATAL, $"{text_total_errors()} error{(text_total_errors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
 		}
 	}
 }
