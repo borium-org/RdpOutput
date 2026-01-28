@@ -209,11 +209,24 @@ namespace RdpOutput
 		/// </summary>
 		private static int symbol_first_char;
 
+		internal Text(int max_text, int max_errors, int max_warnings, int tab_width)
+		{
+			tabwidth = tab_width;
+			maxtext = max_text;
+			maxerrors = max_errors;
+			maxwarnings = max_warnings;
+
+			text_bot = new char[maxtext];
+			text_top = 1;
+			text_current = last_char = first_char = maxtext;
+		}
+
 		internal static int text_column_number()
 		{
 			return first_char - text_current;
 		}
 
+#if UNUSED
 		internal static string text_default_filetype(string fname, string ftype)
 		{
 			if (ftype.Length == 0)
@@ -287,11 +300,12 @@ namespace RdpOutput
 			}
 			return fullname;
 		}
+#endif
 
 		/// <summary>
 		/// Advance text_current, reading another line if necessary
 		/// </summary>
-		internal static void text_get_char()
+		internal void GetChar()
 		{
 			if (text_current <= last_char)
 			{
@@ -355,24 +369,12 @@ namespace RdpOutput
 			return s;
 		}
 
-		internal static void text_init(int max_text, int max_errors, int max_warnings, int tab_width)
-		{
-			tabwidth = tab_width;
-			maxtext = max_text;
-			maxerrors = max_errors;
-			maxwarnings = max_warnings;
-
-			text_bot = new char[maxtext];
-			text_top = 1;
-			text_current = last_char = first_char = maxtext;
-		}
-
-		internal static int text_insert_char(char c)
+		internal int InsertChar(char c)
 		{
 			int start = text_top;
 			if (text_top >= last_char)
 			{
-				text_message(TEXT_FATAL, "Ran out of text space\n");
+				Message(TEXT_FATAL, "Ran out of text space\n");
 			}
 			else
 			{
@@ -381,17 +383,19 @@ namespace RdpOutput
 			return start;
 		}
 
-		internal static int text_insert_characters(string str)
+#if UNUSED
+		internal int text_insert_characters(string str)
 		{
 			int start = text_top;
 			foreach (char ch in str)
 			{
-				text_insert_char(ch);
+				InsertChar(ch);
 			}
 			return start;
 		}
+#endif
 
-		internal static int text_insert_integer(int n)
+		internal int text_insert_integer(int n)
 		{
 			int start = text_top;
 			if (n > 9)
@@ -399,21 +403,22 @@ namespace RdpOutput
 				// recursively handle multi-digit numbers
 				text_insert_integer(n / 10);
 			}
-			text_insert_char((char)(n % 10 + '0'));
+			InsertChar((char)(n % 10 + '0'));
 			return start;
 		}
 
-		internal static int text_insert_string(string str)
+		internal int InsertString(string str)
 		{
 			int start = text_top;
 			foreach (char ch in str)
 			{
-				text_insert_char(ch);
+				InsertChar(ch);
 			}
-			text_insert_char((char)0);
+			InsertChar((char)0);
 			return start;
 		}
 
+#if UNUSED
 		/// <summary>
 		/// Put an id_number into text buffer
 		/// </summary>
@@ -421,16 +426,16 @@ namespace RdpOutput
 		/// <param name="str"></param>
 		/// <param name="n"></param>
 		/// <returns></returns>
-		internal static int text_insert_substring(string prefix, string str, int n)
+		internal int text_insert_substring(string prefix, string str, int n)
 		{
 			int start = text_top;
 
 			text_insert_characters(prefix);
-			text_insert_char('_');
+			Insert('_');
 			text_insert_characters(str);
-			text_insert_char('_');
+			Insert('_');
 			text_insert_integer(n);
-			text_insert_char('\0');
+			Insert('\0');
 			return start;
 		}
 
@@ -443,13 +448,14 @@ namespace RdpOutput
 			}
 			return temp;
 		}
+#endif
 
 		internal static int text_line_number()
 		{
 			return linenumber;
 		}
 
-		internal static int text_message(TextMessageType type, string message)
+		internal int Message(TextMessageType type, string message)
 		{
 			if (message == null)
 			{
@@ -518,17 +524,8 @@ namespace RdpOutput
 			return message.Length + 1;
 		}
 
-		internal static TextReader text_open(TextReader textReader, string s)
+		internal TextReader Open(TextReader textReader, string s)
 		{
-			//TextReader handle = null;
-			//try
-			//{
-			//	handle = s.Equals("-") ? Console.In : new StreamReader(s);
-			//}
-			//catch (FileNotFoundException)
-			//{
-			//	handle = null;
-			//}
 			TextReader handle = textReader;
 			TextReader old = file;
 			if (handle != null) // we found a file
@@ -560,7 +557,7 @@ namespace RdpOutput
 				warnings = 0;
 				if (echo)
 				{
-					text_message(TEXT_INFO, "\n");
+					Message(TEXT_INFO, "\n");
 				}
 				// make new buffer region below current line
 				text_current = last_char = first_char = last_char - 1;
@@ -568,7 +565,7 @@ namespace RdpOutput
 			return handle;
 		}
 
-#if false
+#if UNUSED
 		internal static void text_print_statistics()
 		{
 			long symbolcount = text_top,
@@ -577,15 +574,14 @@ namespace RdpOutput
 
 			if (text_bot == null)
 			{
-				text_message(TEXT_INFO, "Text buffer uninitialised\n");
+				Message(TEXT_INFO, "Text buffer uninitialised\n");
 			}
 			else
 			{
-				text_message(TEXT_INFO, "Text buffer size " + maxtext + " bytes with " + (maxtext - symbolcount - linecount)
+				Message(TEXT_INFO, "Text buffer size " + maxtext + " bytes with " + (maxtext - symbolcount - linecount)
 						+ " bytes free\n");
 			}
 		}
-#endif
 
 		internal static void text_print_time()
 		{
@@ -594,6 +590,7 @@ namespace RdpOutput
 			// text_printf(__DATE__ + " " + __TIME__);
 			text_printf("Sep 19 2015 11:45:00");
 		}
+#endif
 
 		internal static int text_printf(string str)
 		{
@@ -611,27 +608,31 @@ namespace RdpOutput
 			return str == null ? 0 : str.Length;
 		}
 
+#if UNUSED
 		internal static void text_redirect(TextWriter file)
 		{
 			messages = file;
 		}
+#endif
 
 		internal static int text_sequence_number()
 		{
 			return sequence_number;
 		}
 
-		internal static int text_total_errors()
+		internal int TotalErrors()
 		{
 			return totalerrors;
 		}
 
+#if UNUSED
 		internal static string text_uppercase_string(string str)
 		{
 			return str.ToUpper();
 		}
+#endif
 
-		private static void text_close()
+		private void text_close()
 		{
 			if (file == null)
 				return;
@@ -657,7 +658,7 @@ namespace RdpOutput
 				warnings = temp.warnings;
 				if (echo)
 				{
-					text_message(TEXT_INFO, "\n");
+					Message(TEXT_INFO, "\n");
 					text_echo_line();
 				}
 			}
@@ -698,7 +699,7 @@ namespace RdpOutput
 		{
 			if (linenumber != 0)
 			{
-				string s = $"{linenumber, 6}: ";
+				string s = $"{linenumber,6}: ";
 				messages.Write(s);
 			}
 			else

@@ -67,6 +67,26 @@ namespace RdpOutput
 		private static bool retain_comments = false;
 		private static int scan_sequence_running_number = 0;
 
+		private Text text;
+
+		internal Scanner(bool case_insensitive, bool newline_visible, bool show_skips,
+				bool symbol_echo, string[] token_names, Text text)
+		{
+			this.text = text;
+
+			scan_case_insensitive = case_insensitive;
+			scan_show_skips = show_skips;
+			scan_newline_visible = newline_visible;
+			scan_symbol_echo = symbol_echo;
+			scan_token_names = token_names;
+
+			scan_comment_list = new ScanCommentBlock();
+			scan_comment_list_end = scan_comment_list;
+			text_scan_data = new ScanData();
+			scan_table = symbol_new_table("scan table", 101, 31, new CompareHashPrint(), text);
+			scan_insert_comment_block("", 0, 0);
+		}
+
 		internal static void memcpy(ScanData to, ScanData from)
 		{
 			to.next_hash = from.next_hash;
@@ -105,7 +125,7 @@ namespace RdpOutput
 			to.p = null;
 		}
 
-		internal static void scan_()
+		internal void Scan()
 		{
 			int start;
 			ScanData s;
@@ -125,7 +145,7 @@ namespace RdpOutput
 					{
 						text_printf("\n");
 					}
-					text_get_char();
+					text.GetChar();
 				}
 				// Non zero means a token was restored at EOF
 				if (text_scan_data.token != 0)
@@ -142,18 +162,18 @@ namespace RdpOutput
 					{
 						text_char -= 'A' - 'a';
 					}
-					text_insert_char((char)text_char);
-					text_get_char();
+					text.InsertChar((char)text_char);
+					text.GetChar();
 					while (isalnum(text_char) || text_char == '_')
 					{
 						if (scan_case_insensitive && text_char >= 'A' && text_char <= 'Z')
 						{
 							text_char -= 'A' - 'a';
 						}
-						text_insert_char((char)text_char);
-						text_get_char();
+						text.InsertChar((char)text_char);
+						text.GetChar();
 					}
-					text_insert_char('\0');
+					text.InsertChar('\0');
 					if ((s = (ScanData)symbol_lookup_key(scan_table, text_get_string(text_scan_data.id), null)) != null)
 					{
 						memcpy(text_scan_data, s);
@@ -175,13 +195,13 @@ namespace RdpOutput
 					// Check for hexadecimal introducer
 					if (text_char == '0')
 					{
-						text_insert_char((char)text_char);
-						text_get_char();
+						text.InsertChar((char)text_char);
+						text.GetChar();
 						if (text_char == 'x' || text_char == 'X')
 						{
 							hex = true;
-							text_insert_char((char)text_char);
-							text_get_char();
+							text.InsertChar((char)text_char);
+							text.GetChar();
 						}
 					}
 					// Now collect decimal or hex digits
@@ -190,9 +210,9 @@ namespace RdpOutput
 						// suppress underscores
 						if (text_char != '_')
 						{
-							text_insert_char((char)text_char);
+							text.InsertChar((char)text_char);
 						}
-						text_get_char();
+						text.GetChar();
 					}
 					// check for decimal part and exponent
 					if (!hex)
@@ -203,22 +223,22 @@ namespace RdpOutput
 							text_scan_data.token = SCAN_P_REAL;
 							do
 							{
-								text_insert_char((char)text_char);
-								text_get_char();
+								text.InsertChar((char)text_char);
+								text.GetChar();
 							} while (isdigit(text_char));
 						}
 						// get exponent
 						if (text_char == 'E' || text_char == 'e')
 						{
 							text_scan_data.token = SCAN_P_REAL;
-							text_insert_char((char)text_char);
-							text_get_char();
+							text.InsertChar((char)text_char);
+							text.GetChar();
 							if (text_char == '+' || text_char == '-' || isdigit(text_char))
 							{
 								do
 								{
-									text_insert_char((char)text_char);
-									text_get_char();
+									text.InsertChar((char)text_char);
+									text.GetChar();
 								} while (isdigit(text_char));
 							}
 						}
@@ -226,10 +246,10 @@ namespace RdpOutput
 					// Now absorb any letters that are attached to the number
 					while (isalpha(text_char))
 					{
-						text_insert_char((char)text_char);
-						text_get_char();
+						text.InsertChar((char)text_char);
+						text.GetChar();
 					}
-					text_insert_char('\0');
+					text.InsertChar('\0');
 					if (text_scan_data.token == SCAN_P_INTEGER)
 					{
 						text_scan_data.i = Convert.ToInt32(text_get_string(text_scan_data.id));
@@ -245,7 +265,7 @@ namespace RdpOutput
 					if (text_char == EOF)
 					{
 						text_scan_data.token = SCAN_P_EOF;
-						text_scan_data.id = text_insert_string("EOF");
+						text_scan_data.id = text.InsertString("EOF");
 						text_top = start; /* scrub from text buffer */
 						if (retain_comments)
 						{
@@ -256,8 +276,8 @@ namespace RdpOutput
 					{
 						text_top = start; /* scrub from text buffer */
 						text_scan_data.token = SCAN_P_EOLN;
-						text_scan_data.id = text_insert_string("EOLN");
-						text_get_char();
+						text_scan_data.id = text.InsertString("EOLN");
+						text.GetChar();
 					}
 					else
 					{
@@ -267,23 +287,23 @@ namespace RdpOutput
 						for (; ; )
 						{
 							last_sym = this_sym;
-							text_insert_char((char)text_char);
+							text.InsertChar((char)text_char);
 							text_bot[text_top] = '\0';
 							this_sym = (ScanData)symbol_lookup_key(scan_table, text_get_string(start), null);
 							if (this_sym == null)
 								break;
 
-							text_get_char(); // collect longest match
+							text.GetChar(); // collect longest match
 						}
 						// single character means mismatch
 						if (text_top == start + 1)
 						{
 							char ch = text_bot[text_top - 1];
-							text_message(TEXT_ERROR_ECHO, $"Unexpected character 0x{ch:X} \'"
+							text.Message(TEXT_ERROR_ECHO, $"Unexpected character 0x{ch:X} \'"
 									+ (isprint(ch) ? ch : ' ') + "\' in source file\n");
 							text_top = start; /* scrub from text buffer */
 							text_scan_data.token = SCAN_P_IGNORE;
-							text_get_char();
+							text.GetChar();
 						}
 						else
 						{
@@ -307,9 +327,9 @@ namespace RdpOutput
 				switch (text_scan_data.extended)
 				{
 					case SCAN_P_CHAR:
-						text_insert_char((char)text_char);
-						text_insert_char('\0');
-						text_get_char();
+						text.InsertChar((char)text_char);
+						text.InsertChar('\0');
+						text.GetChar();
 						text_scan_data.id = start;
 						break;
 					case SCAN_P_CHAR_ESC:
@@ -317,45 +337,45 @@ namespace RdpOutput
 						{
 							// translate all C escapes. Anything else returns escaped
 							// character
-							text_get_char(); /* skip escape character */
+							text.GetChar(); /* skip escape character */
 							switch (text_char)
 							{
 								case 'n':
-									text_insert_char('\n');
-									text_get_char();
+									text.InsertChar('\n');
+									text.GetChar();
 									break;
 								case 't':
-									text_insert_char('\t');
-									text_get_char();
+									text.InsertChar('\t');
+									text.GetChar();
 									break;
 								case 'b':
-									text_insert_char('\b');
-									text_get_char();
+									text.InsertChar('\b');
+									text.GetChar();
 									break;
 								case 'r':
-									text_insert_char('\r');
-									text_get_char();
+									text.InsertChar('\r');
+									text.GetChar();
 									break;
 								case 'f':
-									text_insert_char('\f');
-									text_get_char();
+									text.InsertChar('\f');
+									text.GetChar();
 									break;
 								case 'x':
 								case 'X': /* hexadecimal */
 									start = text_top;
 									do
 									{
-										text_get_char();
-										text_insert_char((char)text_char);
+										text.GetChar();
+										text.InsertChar((char)text_char);
 									} while (isxdigit(text_char));
 									text_top = 0;
 									long temp = strtol(text_get_string(start), null, 16);
 									text_top = start; /* scrub from buffer */
 									if (temp > 255)
 									{
-										text_message(TEXT_WARNING_ECHO, "Hex escape sequence overflows eight bits: wrapping\n");
+										text.Message(TEXT_WARNING_ECHO, "Hex escape sequence overflows eight bits: wrapping\n");
 									}
-									text_insert_char((char)(temp % 255));
+									text.InsertChar((char)(temp % 255));
 									break;
 								case '0':
 								case '1':
@@ -368,29 +388,29 @@ namespace RdpOutput
 									start = text_top;
 									do
 									{
-										text_insert_char((char)text_char);
-										text_get_char();
+										text.InsertChar((char)text_char);
+										text.GetChar();
 									} while (text_char >= '0' && text_char <= '7');
 									text_top = 0; /* change last character to a null */
 									temp = strtol(text_get_string(start), null, 8);
 									text_top = start; /* scrub from buffer */
 									if (temp > 255)
-										text_message(TEXT_WARNING_ECHO, "Octal escape sequence overflows eight bits: wrapping\n");
-									text_insert_char((char)(temp % 255));
+										text.Message(TEXT_WARNING_ECHO, "Octal escape sequence overflows eight bits: wrapping\n");
+									text.InsertChar((char)(temp % 255));
 									break;
 								default: /* any other quoted character returns itself */
-									text_insert_char((char)text_char);
-									text_get_char();
+									text.InsertChar((char)text_char);
+									text.GetChar();
 									break;
 							}
 						}
 						else
 						{
-							text_insert_char((char)text_char);
-							text_insert_char('\0');
-							text_get_char();
+							text.InsertChar((char)text_char);
+							text.InsertChar('\0');
+							text.GetChar();
 						}
-						text_insert_char('\0');
+						text.InsertChar('\0');
 						text_scan_data.id = start;
 						break;
 					case SCAN_P_STRING:
@@ -401,22 +421,22 @@ namespace RdpOutput
 							{
 								if (text_char == '\n' || text_char == EOF)
 								{
-									text_message(TEXT_ERROR_ECHO, "Unterminated string\n");
+									text.Message(TEXT_ERROR_ECHO, "Unterminated string\n");
 									break;
 								}
-								text_insert_char((char)text_char);
-								text_get_char();
+								text.InsertChar((char)text_char);
+								text.GetChar();
 							}
-							text_get_char(); // get character after close
+							text.GetChar(); // get character after close
 							loop = false;
 							if (text_char == text_bot[text_scan_data.id])
 							{
-								text_insert_char((char)text_char);
-								text_get_char();
+								text.InsertChar((char)text_char);
+								text.GetChar();
 								loop = true;
 							}
 						} while (loop);
-						text_insert_char('\0');
+						text.InsertChar('\0');
 						text_scan_data.id = start;
 						break;
 					case SCAN_P_STRING_ESC:
@@ -424,49 +444,49 @@ namespace RdpOutput
 						{
 							if (text_char == '\n' || text_char == EOF)
 							{
-								text_message(TEXT_ERROR_ECHO, "Unterminated string\n");
+								text.Message(TEXT_ERROR_ECHO, "Unterminated string\n");
 								break;
 							}
 							else if (text_char == text_bot[close]) // found escape
 																   // character
 							{
-								text_get_char(); /* skip escape character */
+								text.GetChar(); /* skip escape character */
 								switch (text_char)
 								{
 									case 'n':
-										text_insert_char('\n');
-										text_get_char();
+										text.InsertChar('\n');
+										text.GetChar();
 										break;
 									case 't':
-										text_insert_char('\t');
-										text_get_char();
+										text.InsertChar('\t');
+										text.GetChar();
 										break;
 									case 'b':
-										text_insert_char('\b');
-										text_get_char();
+										text.InsertChar('\b');
+										text.GetChar();
 										break;
 									case 'r':
-										text_insert_char('\r');
-										text_get_char();
+										text.InsertChar('\r');
+										text.GetChar();
 										break;
 									case 'f':
-										text_insert_char('\f');
-										text_get_char();
+										text.InsertChar('\f');
+										text.GetChar();
 										break;
 									case 'x':
 									case 'X': /* hexadecimal */
 										start = text_top;
 										do
 										{
-											text_get_char();
-											text_insert_char((char)text_char);
+											text.GetChar();
+											text.InsertChar((char)text_char);
 										} while (isxdigit(text_char));
 										text_top = 0; // change last character to a null
 										long temp = strtol(text_get_string(start), null, 16);
 										text_top = start; /* scrub from buffer */
 										if (temp > 255)
-											text_message(TEXT_WARNING_ECHO, "Hex escape sequence overflows eight bits: wrapping\n");
-										text_insert_char((char)(temp % 255));
+											text.Message(TEXT_WARNING_ECHO, "Hex escape sequence overflows eight bits: wrapping\n");
+										text.InsertChar((char)(temp % 255));
 										break;
 									case '0':
 									case '1':
@@ -479,34 +499,34 @@ namespace RdpOutput
 										start = text_top;
 										do
 										{
-											text_insert_char((char)text_char);
-											text_get_char();
+											text.InsertChar((char)text_char);
+											text.GetChar();
 										} while (text_char >= '0' && text_char <= '7');
 										text_top = 0; // change last character to a null
 										temp = strtol(text_get_string(start), null, 8);
 										text_top = start; /* scrub from buffer */
 										if (temp > 255)
 										{
-											text_message(TEXT_WARNING_ECHO,
+											text.Message(TEXT_WARNING_ECHO,
 													"Octal escape sequence overflows eight bits: wrapping\n");
 										}
-										text_insert_char((char)(temp % 255));
+										text.InsertChar((char)(temp % 255));
 										break;
 									default:
-										text_insert_char((char)text_char);
-										text_get_char();
+										text.InsertChar((char)text_char);
+										text.GetChar();
 										break;
 								}
 							}
 							else
 							{
 								/* ordinary character */
-								text_insert_char((char)text_char);
-								text_get_char();
+								text.InsertChar((char)text_char);
+								text.GetChar();
 							}
 						}
-						text_get_char(); /* skip close character */
-						text_insert_char('\0'); /* terminate string */
+						text.GetChar(); /* skip close character */
+						text.InsertChar('\0'); /* terminate string */
 						text_scan_data.id = start; /* make current id string body */
 						break;
 
@@ -514,10 +534,10 @@ namespace RdpOutput
 					case SCAN_P_COMMENT_LINE_VISIBLE:
 						while (text_char != '\n' && text_char != EOF)
 						{
-							text_insert_char((char)text_char);
-							text_get_char();
+							text.InsertChar((char)text_char);
+							text.GetChar();
 						}
-						text_insert_char('\0'); /* terminate with a null */
+						text.InsertChar('\0'); /* terminate with a null */
 						text_scan_data.id = start; /* make current id comment body */
 						if (text_scan_data.extended == SCAN_P_COMMENT_LINE)
 						{
@@ -538,19 +558,19 @@ namespace RdpOutput
 					case SCAN_P_COMMENT:
 						nestable = (text_scan_data.extended == SCAN_P_COMMENT_NEST) || (text_scan_data.extended == SCAN_P_COMMENT_NEST_VISIBLE);
 						// /* We have to be a bit careful here: remember that the
-						// text_get_char() routine puts a space in at the start of each
+						// text.GetChar() routine puts a space in at the start of each
 						// line to
 						// delay echoing of the line in the assembler */
 						do
 						{
 							if (text_char == EOF)
-								text_message(TEXT_FATAL_ECHO, "Comment terminated by end of file\n");
+								text.Message(TEXT_FATAL_ECHO, "Comment terminated by end of file\n");
 
 							if (last != '\n')
-								text_insert_char((char)text_char);
+								text.InsertChar((char)text_char);
 
 							last = text_char;
-							text_get_char();
+							text.GetChar();
 							// single close or double close
 							if (text_bot[close + 1] == 0 && text_bot[close] == text_bot[text_top - 1]
 									|| text_bot[close + 1] == text_bot[text_top - 1]
@@ -600,7 +620,7 @@ namespace RdpOutput
 			if (scan_symbol_echo)
 			{
 				Console.WriteLine("Scan symbol echo");
-				text_message(TEXT_INFO, "Scanned ");
+				text.Message(TEXT_INFO, "Scanned ");
 				// TODO set_print_element(text_scan_data.token, scan_token_names);
 				// text_printf(" id \'%s\', sequence number %lu\n",
 				// text_scan_data.id,
@@ -641,41 +661,25 @@ namespace RdpOutput
 			}
 		}
 
-		internal static void scan_init(bool case_insensitive, bool newline_visible, bool show_skips,
-				bool symbol_echo, string[] token_names)
-		{
-			scan_case_insensitive = case_insensitive;
-			scan_show_skips = show_skips;
-			scan_newline_visible = newline_visible;
-			scan_symbol_echo = symbol_echo;
-			scan_token_names = token_names;
-
-			scan_comment_list = new ScanCommentBlock();
-			scan_comment_list_end = scan_comment_list;
-			text_scan_data = new ScanData();
-			scan_table = symbol_new_table("scan table", 101, 31, new CompareHashPrint());
-			scan_insert_comment_block("", 0, 0);
-		}
-
 		internal static void scan_lexicalise()
 		{
 			scan_lexicalise_flag = true;
 		}
 
-		internal static void scan_load_keyword(string id1, string id2, int token, int extended)
+		internal void LoadKeyword(string id1, string id2, int token, int extended)
 		{
 			ScanData d = new ScanData();
-			d.id = text_insert_string(id1);
+			d.id = text.InsertString(id1);
 			if (id2 != null)
 			{
-				text_insert_string(id2);
+				text.InsertString(id2);
 			}
 			d.token = token;
 			d.extended = extended;
 			symbol_insert_symbol(scan_table, d);
 		}
 
-		internal static bool scan_test(string production, int valid, Set stop)
+		internal bool Test(string production, int valid, Set stop)
 		{
 			if (valid != text_scan_data.token)
 			{
@@ -692,7 +696,7 @@ namespace RdpOutput
 			return true;
 		}
 
-		internal static bool scan_test_set(string production, Set valid, Set stop)
+		internal bool Test(string production, Set valid, Set stop)
 		{
 			if (!valid.includes(text_scan_data.token))
 			{
@@ -709,15 +713,15 @@ namespace RdpOutput
 			return true;
 		}
 
-		private static void printScannedToken(string production)
+		private void printScannedToken(string production)
 		{
 			if (production != null)
 			{
-				text_message(TEXT_ERROR_ECHO, "In rule \'" + production + "\', scanned ");
+				text.Message(TEXT_ERROR_ECHO, "In rule \'" + production + "\', scanned ");
 			}
 			else
 			{
-				text_message(TEXT_ERROR_ECHO, "Scanned ");
+				text.Message(TEXT_ERROR_ECHO, "Scanned ");
 			}
 			set_print_element(text_scan_data.token, scan_token_names, true);
 		}
@@ -734,15 +738,15 @@ namespace RdpOutput
 			last_comment_block = temp;
 		}
 
-		private static void skip(Set stop)
+		private void skip(Set stop)
 		{
 			while (!stop.includes(text_scan_data.token))
 			{
-				scan_();
+				Scan();
 			}
 			if (scan_show_skips)
 			{
-				text_message(TEXT_ERROR_ECHO, "Skipping to...\n");
+				text.Message(TEXT_ERROR_ECHO, "Skipping to...\n");
 			}
 		}
 	}

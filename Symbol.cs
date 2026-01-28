@@ -57,24 +57,26 @@ namespace RdpOutput
 			return p;
 		}
 
+#if NEVER
 		internal static SymbolScopeData symbol_new_scope(SymbolTable table, string id)
 		{
 			SymbolScopeData p = new SymbolScopeData();
 
-			p.id = text_insert_string(id);
+			p.id = text.text_insert_string(id);
 			p.next_hash = table.scopes;
 			table.current = table.scopes = p;
 			if (p.next_hash != null)
 				p.next_hash.last_hash.set(p.next_hash);
 			return p;
 		}
+#endif
 
 		internal static SymbolTable symbol_new_table(string name, int symbol_hashsize, int symbol_hashprime,
-				CompareHashPrint compareHashPrint)
+				CompareHashPrint compareHashPrint, Text text)
 		{
 			SymbolTable temp = new SymbolTable();
 			SymbolScopeData scope = new SymbolScopeData();
-			scope.id = text_insert_string("Global");
+			scope.id = text.InsertString("Global");
 			temp.name = name;
 			temp.hash_size = symbol_hashsize;
 			temp.hash_prime = symbol_hashprime;

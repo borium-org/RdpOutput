@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using static RdpOutput.CRT;
 using static RdpOutput.Scanner;
@@ -19,107 +20,128 @@ namespace RdpOutput
 			const int RDP_T_59 /* ; */ = SCAN_P_TOP + 5;
 			const int RDP_T_Entity = SCAN_P_TOP + 6;
 
+			private Text text;
+			private Scanner scan;
+
 			internal Compiler(int max_text, int max_errors, int max_warnings, int tab_width,
 				bool case_insensitive, bool newline_visible, bool show_skips, bool symbol_echo,
 				string[] token_names)
 			{
-				text_init(max_text, max_errors, max_warnings, tab_width);
-				scan_init(case_insensitive, newline_visible, show_skips, symbol_echo, token_names);
+				text = new Text(max_text, max_errors, max_warnings, tab_width);
+				scan = new Scanner(case_insensitive, newline_visible, show_skips, symbol_echo, token_names, text);
 
 				LoadKeywords();
 			}
 
+			private void EntryMessage()
+			{
+				StackTrace stackTrace = new StackTrace();
+				string callerName = stackTrace.GetFrame(1).GetMethod().Name;
+				text.Message(TEXT_INFO, $"Entered '{callerName}'\n");
+			}
+
+			private void ExitMessage()
+			{
+				StackTrace stackTrace = new StackTrace();
+				string callerName = stackTrace.GetFrame(1).GetMethod().Name;
+				text.Message(TEXT_INFO, $"Exited  '{callerName}'\n");
+			}
+
 			internal void CompilationUnit()
 			{
-				text_message(TEXT_INFO, "Entered 'CompilationUnit'\n");
+				EntryMessage();
 
 				{
-					if (scan_test("rdp_CompilationUnit_1", SCAN_P_ID, null))
+					if (scan.Test("rdp_CompilationUnit_1", SCAN_P_ID, null))
 					{
 						while (true)
 						{
 							{
 								UsingDirective();
 							}
-							if (!scan_test("rdp_CompilationUnit_1", SCAN_P_ID, null))
+							if (!scan.Test("rdp_CompilationUnit_1", SCAN_P_ID, null))
 								break;
 						}
 					}
-					if (scan_test("rdp_CompilationUnit_3", RDP_T_Entity, null))
+					if (scan.Test("rdp_CompilationUnit_3", RDP_T_Entity, null))
 					{
 						while (true)
 						{
 							{
 								EntityDeclaration();
 							}
-							if (!scan_test("rdp_CompilationUnit_3", RDP_T_Entity, null))
+							if (!scan.Test("rdp_CompilationUnit_3", RDP_T_Entity, null))
 								break;
 						}
 					}
-					scan_test_set("CompilationUnit", CompilationUnit_stop, CompilationUnit_stop);
+					scan.Test("CompilationUnit", CompilationUnit_stop, CompilationUnit_stop);
 				}
-				text_message(TEXT_INFO, "Exited  'CompilationUnit'\n");
+
+				ExitMessage();
 			}
 
 			private void EntityDeclaration()
 			{
-				text_message(TEXT_INFO, "Entered 'EntityDeclaration'\n");
+				EntryMessage();
 
 				{
-					scan_test("EntityDeclaration", RDP_T_Entity, EntityDeclaration_stop);
-					scan_();
-					scan_test_set("EntityDeclaration", EntityDeclaration_stop, EntityDeclaration_stop);
+					scan.Test("EntityDeclaration", RDP_T_Entity, EntityDeclaration_stop);
+					scan.Scan();
+					scan.Test("EntityDeclaration", EntityDeclaration_stop, EntityDeclaration_stop);
 				}
-				text_message(TEXT_INFO, "Exited  'EntityDeclaration'\n");
+
+				ExitMessage();
 			}
 
 			private void Identifier()
 			{
-				text_message(TEXT_INFO, "Entered 'Identifier'\n");
+				EntryMessage();
 
 				{
-					scan_test("Identifier", SCAN_P_ID, Identifier_stop);
-					scan_();
-					scan_test_set("Identifier", Identifier_stop, Identifier_stop);
+					scan.Test("Identifier", SCAN_P_ID, Identifier_stop);
+					scan.Scan();
+					scan.Test("Identifier", Identifier_stop, Identifier_stop);
 				}
-				text_message(TEXT_INFO, "Exited  'Identifier'\n");
+
+				ExitMessage();
 			}
 
 			private void UsingDirective()
 			{
-				text_message(TEXT_INFO, "Entered 'UsingDirective'\n");
+				EntryMessage();
 
 				{
 					Identifier();
-					if (scan_test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
+					if (scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 					{
 						while (true)
 						{
 							{
-								scan_test("UsingDirective", RDP_T_46 /* . */, UsingDirective_stop);
-								scan_();
+								scan.Test("UsingDirective", RDP_T_46 /* . */, UsingDirective_stop);
+								scan.Scan();
 								Identifier();
 							}
-							if (!scan_test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
+							if (!scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 								break;
 						}
 					}
-					scan_test("UsingDirective", RDP_T_59 /* ; */, UsingDirective_stop);
-					scan_();
-					scan_test_set("UsingDirective", UsingDirective_stop, UsingDirective_stop);
+					scan.Test("UsingDirective", RDP_T_59 /* ; */, UsingDirective_stop);
+					scan.Scan();
+					scan.Test("UsingDirective", UsingDirective_stop, UsingDirective_stop);
 				}
-				text_message(TEXT_INFO, "Exited  'UsingDirective'\n");
+
+				ExitMessage();
 			}
 
 			private void LoadKeywords()
 			{
-				scan_load_keyword("\"", "\\", RDP_T_34 /* " */, SCAN_P_STRING_ESC);
-				scan_load_keyword("\'", "\\", RDP_T_39 /* ' */, SCAN_P_STRING_ESC);
-				scan_load_keyword(".", null, RDP_T_46 /* . */, SCAN_P_IGNORE);
-				scan_load_keyword("/*", "*/", RDP_T_4742 /* / * */, SCAN_P_COMMENT);
-				scan_load_keyword("//", null, RDP_T_4747 /* // */, SCAN_P_COMMENT_LINE);
-				scan_load_keyword(";", null, RDP_T_59 /* ; */, SCAN_P_IGNORE);
-				scan_load_keyword("Entity", null, RDP_T_Entity, SCAN_P_IGNORE);
+				scan.LoadKeyword("\"", "\\", RDP_T_34 /* " */, SCAN_P_STRING_ESC);
+				scan.LoadKeyword("\'", "\\", RDP_T_39 /* ' */, SCAN_P_STRING_ESC);
+				scan.LoadKeyword(".", null, RDP_T_46 /* . */, SCAN_P_IGNORE);
+				scan.LoadKeyword("/*", "*/", RDP_T_4742 /* / * */, SCAN_P_COMMENT);
+				scan.LoadKeyword("//", null, RDP_T_4747 /* // */, SCAN_P_COMMENT_LINE);
+				scan.LoadKeyword(";", null, RDP_T_59 /* ; */, SCAN_P_IGNORE);
+				scan.LoadKeyword("Entity", null, RDP_T_Entity, SCAN_P_IGNORE);
 			}
 
 			private static readonly Set Char_stop = new Set(SCAN_P_EOF);
@@ -135,16 +157,18 @@ namespace RdpOutput
 
 			internal bool Open(StreamReader streamReader, string sourceFileName)
 			{
-				if (text_open(streamReader, sourceFileName) == null)
+				if (text.Open(streamReader, sourceFileName) == null)
 					return false;
-				text_get_char();
-				scan_();
+				text.GetChar();
+				scan.Scan();
 				return true;
 			}
 
 			internal void Compile()
 			{
 				CompilationUnit();
+				if (text.TotalErrors() != 0)
+					text.Message(TEXT_FATAL, $"{text.TotalErrors()} error{(text.TotalErrors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
 			}
 		}
 
@@ -174,9 +198,6 @@ namespace RdpOutput
 					throw new Exception("unable to open source file");
 				compiler.Compile();
 			}
-
-			if (text_total_errors() != 0)
-				text_message(TEXT_FATAL, $"{text_total_errors()} error{(text_total_errors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
 		}
 	}
 }
