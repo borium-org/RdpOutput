@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using static RdpOutput.CRT;
-using static RdpOutput.Scan;
+using static RdpOutput.Scanner;
 using static RdpOutput.Text.TextMessageType;
 
 namespace RdpOutput

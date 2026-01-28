@@ -1,5 +1,5 @@
 ﻿using static RdpOutput.CRT;
-using static RdpOutput.Scan;
+using static RdpOutput.Scanner;
 using static RdpOutput.Text;
 using static RdpOutput.Text.TextMessageType;
 

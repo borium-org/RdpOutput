@@ -8,7 +8,7 @@ using static RdpOutput.Text.TextMessageType;
 
 namespace RdpOutput
 {
-	internal class Scan
+	internal class Scanner
 	{
 		internal class ScanData : Symbol
 		{
