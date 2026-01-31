@@ -542,7 +542,7 @@ namespace RdpOutput
 					temp.name = name;
 					temp.text_char = text_char;
 					temp.text_current = text_current;
-					memcpy(temp.text_scan_data, text_scan_data);
+					temp.text_scan_data.memcpy(text_scan_data);
 					temp.symbol_first_char = symbol_first_char;
 					temp.warnings = warnings;
 					// link descriptor block into head of list
@@ -653,7 +653,7 @@ namespace RdpOutput
 				name = temp.name;
 				text_char = temp.text_char;
 				text_current = temp.text_current;
-				memcpy(text_scan_data, temp.text_scan_data);
+				text_scan_data.memcpy(temp.text_scan_data);
 				symbol_first_char = temp.symbol_first_char;
 				warnings = temp.warnings;
 				if (echo)

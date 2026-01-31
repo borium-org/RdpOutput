@@ -21,6 +21,44 @@ namespace RdpOutput
 			internal int i;
 			internal double r;
 			internal object p;
+
+			internal void Clear()
+			{
+				next_hash = null;
+				last_hash.set(null);
+				next_scope = null;
+				scope = null;
+				hash = 0;
+				id = 0;
+				token = 0;
+				extended = 0;
+				comment_block = null;
+				sourcefilename = null;
+				line_number = 0;
+				u = 0;
+				i = 0;
+				r = 0;
+				p = null;
+			}
+
+			internal void memcpy(ScanData from)
+			{
+				next_hash = from.next_hash;
+				last_hash.set(from.last_hash.value());
+				next_scope = from.next_scope;
+				scope = from.scope;
+				hash = from.hash;
+				id = from.id;
+				token = from.token;
+				extended = from.extended;
+				comment_block = from.comment_block;
+				sourcefilename = from.sourcefilename;
+				line_number = from.line_number;
+				u = from.u;
+				i = from.i;
+				r = from.r;
+				p = from.p;
+			}
 		}
 
 		internal class ScanCommentBlock
@@ -50,24 +88,24 @@ namespace RdpOutput
 		internal const int SCAN_P_EOLN = 15;
 		internal const int SCAN_P_TOP = 16;
 
-		private static bool scan_case_insensitive = false;
-		private static bool scan_show_skips = false;
-		private static bool scan_newline_visible = false;
-		private static bool scan_symbol_echo = false;
-		private static string[] scan_token_names = null;
-		private static ScanCommentBlock scan_comment_list = null;
-		private static ScanCommentBlock scan_comment_list_end = null;
-		private static ScanCommentBlock last_comment_block;
+		private readonly bool scan_case_insensitive = false;
+		private readonly bool scan_show_skips = false;
+		private readonly bool scan_newline_visible = false;
+		private readonly bool scan_symbol_echo = false;
+		private readonly string[] scan_token_names = null;
+		private readonly ScanCommentBlock scan_comment_list = null;
+		private ScanCommentBlock scan_comment_list_end = null;
+		private ScanCommentBlock last_comment_block;
 
-		private static SymbolTable scan_table;
+		private readonly SymbolTable scan_table;
 
-		private static bool scan_lexicalise_flag = false;
-		private static int last_line_number = 0;
-		private static int last_column = 0;
-		private static bool retain_comments = false;
-		private static int scan_sequence_running_number = 0;
+		private bool scan_lexicalise_flag = false;
+		private int last_line_number = 0;
+		private int last_column = 0;
+		private readonly bool retain_comments = false;
+		private int scan_sequence_running_number = 0;
 
-		private Text text;
+		private readonly Text text;
 
 		internal Scanner(bool case_insensitive, bool newline_visible, bool show_skips,
 				bool symbol_echo, string[] token_names, Text text)
@@ -84,45 +122,7 @@ namespace RdpOutput
 			scan_comment_list_end = scan_comment_list;
 			text_scan_data = new ScanData();
 			scan_table = symbol_new_table("scan table", 101, 31, new CompareHashPrint(), text);
-			scan_insert_comment_block("", 0, 0);
-		}
-
-		internal static void memcpy(ScanData to, ScanData from)
-		{
-			to.next_hash = from.next_hash;
-			to.last_hash.set(from.last_hash.value());
-			to.next_scope = from.next_scope;
-			to.scope = from.scope;
-			to.hash = from.hash;
-			to.id = from.id;
-			to.token = from.token;
-			to.extended = from.extended;
-			to.comment_block = from.comment_block;
-			to.sourcefilename = from.sourcefilename;
-			to.line_number = from.line_number;
-			to.u = from.u;
-			to.i = from.i;
-			to.r = from.r;
-			to.p = from.p;
-		}
-
-		internal static void memset(ScanData to)
-		{
-			to.next_hash = null;
-			to.last_hash.set(null);
-			to.next_scope = null;
-			to.scope = null;
-			to.hash = 0;
-			to.id = 0;
-			to.token = 0;
-			to.extended = 0;
-			to.comment_block = null;
-			to.sourcefilename = null;
-			to.line_number = 0;
-			to.u = 0;
-			to.i = 0;
-			to.r = 0;
-			to.p = null;
+			InsertCommentBlock("", 0, 0);
 		}
 
 		internal void Scan()
@@ -136,7 +136,7 @@ namespace RdpOutput
 			do
 			{
 				start = text_top;
-				memset(text_scan_data);
+				text_scan_data.Clear();
 				// Don't do extendeds for non scanner table items
 				text_scan_data.extended = SCAN_P_IGNORE;
 				while (text_char != EOF && !(scan_newline_visible && text_char == '\n') && isspace(text_char))
@@ -176,7 +176,7 @@ namespace RdpOutput
 					text.InsertChar('\0');
 					if ((s = (ScanData)symbol_lookup_key(scan_table, text_get_string(text_scan_data.id), null)) != null)
 					{
-						memcpy(text_scan_data, s);
+						text_scan_data.memcpy(s);
 						text_top = start;
 					}
 					else
@@ -269,7 +269,7 @@ namespace RdpOutput
 						text_top = start; /* scrub from text buffer */
 						if (retain_comments)
 						{
-							scan_insert_comment_block("", 0, int.MaxValue);
+							InsertCommentBlock("", 0, int.MaxValue);
 						}
 					}
 					else if (text_char == '\n')
@@ -307,7 +307,7 @@ namespace RdpOutput
 						}
 						else
 						{
-							memcpy(text_scan_data, last_sym);
+							text_scan_data.memcpy(last_sym);
 						}
 						text_top = start; /* discard token from text buffer */
 					}
@@ -544,7 +544,7 @@ namespace RdpOutput
 							text_scan_data.token = SCAN_P_IGNORE;
 							if (retain_comments)
 							{
-								scan_insert_comment_block(text_get_string(start), last_column, scan_sequence_running_number);
+								InsertCommentBlock(text_get_string(start), last_column, scan_sequence_running_number);
 							}
 							else
 							{
@@ -599,7 +599,7 @@ namespace RdpOutput
 							text_scan_data.token = SCAN_P_IGNORE;
 							if (retain_comments)
 							{
-								scan_insert_comment_block(text_get_string(start), last_column, scan_sequence_running_number);
+								InsertCommentBlock(text_get_string(start), last_column, scan_sequence_running_number);
 							}
 							else
 							{
@@ -613,7 +613,7 @@ namespace RdpOutput
 			} while (text_scan_data.token == SCAN_P_IGNORE);
 			text_scan_data.comment_block = last_comment_block;
 			if (scan_sequence_running_number != text_sequence_number())
-				scan_insert_comment_block(null, 0, text_sequence_number());
+				InsertCommentBlock(null, 0, text_sequence_number());
 			scan_sequence_running_number = text_sequence_number();
 			text_scan_data.sourcefilename = sourceFileName;
 			text_scan_data.line_number = text_line_number();
@@ -661,10 +661,12 @@ namespace RdpOutput
 			}
 		}
 
-		internal static void scan_lexicalise()
+#if NEVER
+		internal void scan_lexicalise()
 		{
 			scan_lexicalise_flag = true;
 		}
+#endif
 
 		internal void LoadKeyword(string id1, string id2, int token, int extended)
 		{
@@ -685,11 +687,11 @@ namespace RdpOutput
 			{
 				if (stop != null)
 				{
-					printScannedToken(production);
+					PrintScannedToken(production);
 					text_printf(" while expecting ");
 					set_print_element(valid, scan_token_names, true);
 					text_printf("\n");
-					skip(stop);
+					Skip(stop);
 				}
 				return false;
 			}
@@ -702,18 +704,18 @@ namespace RdpOutput
 			{
 				if (stop != null)
 				{
-					printScannedToken(production);
+					PrintScannedToken(production);
 					text_printf(" while expecting " + (set_cardinality(valid) == 1 ? "" : "one of "));
 					valid.print(scan_token_names, 60);
 					text_printf("\n");
-					skip(stop);
+					Skip(stop);
 				}
 				return false;
 			}
 			return true;
 		}
 
-		private void printScannedToken(string production)
+		private void PrintScannedToken(string production)
 		{
 			if (production != null)
 			{
@@ -726,7 +728,7 @@ namespace RdpOutput
 			set_print_element(text_scan_data.token, scan_token_names, true);
 		}
 
-		private static void scan_insert_comment_block(string pattern, int column, int sequence_number)
+		private void InsertCommentBlock(string pattern, int column, int sequence_number)
 		{
 			ScanCommentBlock temp = new ScanCommentBlock();
 			scan_comment_list_end.comment = pattern;
@@ -738,7 +740,7 @@ namespace RdpOutput
 			last_comment_block = temp;
 		}
 
-		private void skip(Set stop)
+		private void Skip(Set stop)
 		{
 			while (!stop.includes(text_scan_data.token))
 			{
