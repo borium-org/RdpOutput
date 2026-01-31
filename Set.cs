@@ -8,10 +8,10 @@ namespace RdpOutput
 	{
 		internal Set(params int[] bits)
 		{
-			clear();
+			Clear();
 			foreach (int bit in bits)
 			{
-				set(bit);
+				Insert(bit);
 			}
 		}
 
@@ -22,12 +22,28 @@ namespace RdpOutput
 		}
 #endif
 
-		internal static int set_cardinality(Set src)
+		/// <summary>
+		/// Calculate the set cardinality. The method is static to allow null set to be
+		/// passed into it (with cardinality 0).
+		/// </summary>
+		/// <param name="src">The set or null.</param>
+		/// <returns></returns>
+		internal static int SetCardinality(Set src)
 		{
-			return src == null ? 0 : src.cardinality();
+			return src == null ? 0 : src.Cardinality();
 		}
 
-		internal static int set_print_element(int element, string[] element_names, bool comments)
+		/// <summary>
+		/// Print the string associated with the set element. The method is static to avoid
+		/// passing set element name atring arrays to all sets in the app. All references to
+		/// this method are made directly or indirectly from the Scanner object that does not
+		/// have all too many sets but for now this static will do.
+		/// </summary>
+		/// <param name="element"></param>
+		/// <param name="element_names"></param>
+		/// <param name="comments"></param>
+		/// <returns></returns>
+		internal static int SetPrintElement(int element, string[] element_names, bool comments)
 		{
 			if (element_names == null)
 			{
@@ -44,6 +60,7 @@ namespace RdpOutput
 
 		private uint[] data = new uint[10];
 
+#if NEVER
 		/// <summary>
 		/// Clear a dst and then set only those bits specified by src
 		/// </summary>
@@ -63,8 +80,9 @@ namespace RdpOutput
 			clear();
 			unite(src);
 		}
+#endif
 
-		internal void clear()
+		internal void Clear()
 		{
 			for (int i = 0; i < data.Length; i++)
 			{
@@ -72,14 +90,15 @@ namespace RdpOutput
 			}
 		}
 
-		internal bool includes(int element)
+		internal bool Includes(int element)
 		{
-			grow(element);
+			Grow(element);
 			int index = element / 32;
 			element &= 0x1F;
 			return (data[index] & 1 << element) != 0;
 		}
 
+#if NEVER
 		internal void intersect(Set src)
 		{
 			/* only iterate over shortest set */
@@ -94,12 +113,13 @@ namespace RdpOutput
 				data[length++] = 0;
 			}
 		}
+#endif
 
-		internal void print(string[] element_names, int line_length)
+		internal void Print(string[] element_names, int line_length)
 		{
 			int column = 0;
 			bool not_first = false;
-			int[] elements = array();
+			int[] elements = ToArray();
 			foreach (int element in elements)
 			{
 				if (not_first)
@@ -116,10 +136,11 @@ namespace RdpOutput
 					text_printf("\n");
 					column = 0;
 				}
-				column += set_print_element(element, element_names, true);
+				column += SetPrintElement(element, element_names, true);
 			}
 		}
 
+#if NEVER
 		public delegate int IndentFunction();
 
 		internal void print(string[] element_names, int initialOffset, IndentFunction indent, int line_length, bool comments)
@@ -146,15 +167,17 @@ namespace RdpOutput
 				column += set_print_element(element, element_names, comments);
 			}
 		}
+#endif
 
-		internal void set(int element)
+		internal void Insert(int element)
 		{
-			grow(element);
+			Grow(element);
 			int index = element / 32;
 			element &= 0x1F;
 			data[index] |= (uint)(1 << element);
 		}
 
+#if NEVER
 		internal void unite(Set src)
 		{
 			grow(src.length());
@@ -163,8 +186,9 @@ namespace RdpOutput
 				data[i] |= src.data[i];
 			}
 		}
+#endif
 
-		private int[] array()
+		private int[] ToArray()
 		{
 			List<int> elements = new List<int>();
 			for (int word = 0; word < data.Length; word++)
@@ -180,7 +204,7 @@ namespace RdpOutput
 			return elements.ToArray();
 		}
 
-		private int cardinality()
+		private int Cardinality()
 		{
 			int[] bitCounts = new int[] { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4 };
 
@@ -197,7 +221,7 @@ namespace RdpOutput
 			return cardinality;
 		}
 
-		private void grow(int bits)
+		private void Grow(int bits)
 		{
 			int index = (bits + 31) / 32;
 			if (index >= data.Length)
@@ -215,6 +239,7 @@ namespace RdpOutput
 			}
 		}
 
+#if NEVER
 		private int length()
 		{
 			return data.Length;
@@ -223,7 +248,7 @@ namespace RdpOutput
 		internal void printIndented(string[] element_names, int column, int width, int indentLevel)
 		{
 			bool isFirst = true;
-			int[] elements = array();
+			int[] elements = ToArray();
 			foreach (int element in elements)
 			{
 				string elementString;
@@ -257,5 +282,6 @@ namespace RdpOutput
 				column += text_printf(elementString);
 			}
 		}
+#endif
 	}
 }

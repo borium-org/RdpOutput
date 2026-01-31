@@ -689,7 +689,7 @@ namespace RdpOutput
 				{
 					PrintScannedToken(production);
 					text_printf(" while expecting ");
-					set_print_element(valid, scan_token_names, true);
+					SetPrintElement(valid, scan_token_names, true);
 					text_printf("\n");
 					Skip(stop);
 				}
@@ -700,13 +700,13 @@ namespace RdpOutput
 
 		internal bool Test(string production, Set valid, Set stop)
 		{
-			if (!valid.includes(text_scan_data.token))
+			if (!valid.Includes(text_scan_data.token))
 			{
 				if (stop != null)
 				{
 					PrintScannedToken(production);
-					text_printf(" while expecting " + (set_cardinality(valid) == 1 ? "" : "one of "));
-					valid.print(scan_token_names, 60);
+					text_printf(" while expecting " + (SetCardinality(valid) == 1 ? "" : "one of "));
+					valid.Print(scan_token_names, 60);
 					text_printf("\n");
 					Skip(stop);
 				}
@@ -725,7 +725,7 @@ namespace RdpOutput
 			{
 				text.Message(TEXT_ERROR_ECHO, "Scanned ");
 			}
-			set_print_element(text_scan_data.token, scan_token_names, true);
+			SetPrintElement(text_scan_data.token, scan_token_names, true);
 		}
 
 		private void InsertCommentBlock(string pattern, int column, int sequence_number)
@@ -742,7 +742,7 @@ namespace RdpOutput
 
 		private void Skip(Set stop)
 		{
-			while (!stop.includes(text_scan_data.token))
+			while (!stop.Includes(text_scan_data.token))
 			{
 				Scan();
 			}
