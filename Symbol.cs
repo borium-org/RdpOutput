@@ -3,10 +3,8 @@ using static RdpOutput.Text;
 
 namespace RdpOutput
 {
-	internal class Symbol : IComparable<Symbol>
+	internal class Symbol // : IComparable<Symbol>
 	{
-		private static SymbolTable symbol_tables = null;
-
 		internal static Symbol symbol_insert_symbol(SymbolTable table, Symbol symbol)
 		{
 			Symbol s = symbol;
@@ -84,10 +82,6 @@ namespace RdpOutput
 			temp.table = new Symbol[symbol_hashsize];
 			temp.current = temp.scopes = scope;
 
-			// now hook into list of tables
-			temp.next = symbol_tables;
-			symbol_tables = temp;
-
 			return temp;
 		}
 
@@ -108,6 +102,7 @@ namespace RdpOutput
 
 		internal int id;
 
+#if NEVER
 		public int CompareTo(Symbol other)
 		{
 			return string.Compare(text_get_string(id), text_get_string(other.id), StringComparison.Ordinal);
@@ -126,6 +121,7 @@ namespace RdpOutput
 		{
 			text_printf(id == 0 ? "Null symbol" : text_get_string(id));
 		}
+#endif
 
 		internal void unlinkSymbol()
 		{

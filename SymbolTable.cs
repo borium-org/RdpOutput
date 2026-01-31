@@ -34,11 +34,6 @@
 
 		internal CompareHashPrint compareHashPrint;
 
-		/// <summary>
-		/// Pointer to last declared symbol table
-		/// </summary>
-		internal SymbolTable next;
-
 		internal int compare(string key, Symbol p)
 		{
 			return compareHashPrint.compare(key, p);
