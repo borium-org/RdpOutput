@@ -121,7 +121,7 @@ namespace RdpOutput
 			scan_comment_list = new ScanCommentBlock();
 			scan_comment_list_end = scan_comment_list;
 			text_scan_data = new ScanData();
-			scan_table = symbol_new_table("scan table", 101, 31, new CompareHashPrint(), text);
+			scan_table = new SymbolTable("scan table", 101, 31, new CompareHashPrint(text), text);
 			InsertCommentBlock("", 0, 0);
 		}
 
@@ -174,7 +174,7 @@ namespace RdpOutput
 						text.GetChar();
 					}
 					text.InsertChar('\0');
-					if ((s = (ScanData)symbol_lookup_key(scan_table, text_get_string(text_scan_data.id), null)) != null)
+					if ((s = (ScanData)scan_table.LookupKey(text.GetString(text_scan_data.id), null)) != null)
 					{
 						text_scan_data.memcpy(s);
 						text_top = start;
@@ -252,11 +252,11 @@ namespace RdpOutput
 					text.InsertChar('\0');
 					if (text_scan_data.token == SCAN_P_INTEGER)
 					{
-						text_scan_data.i = Convert.ToInt32(text_get_string(text_scan_data.id));
+						text_scan_data.i = Convert.ToInt32(text.GetString(text_scan_data.id));
 					}
 					else
 					{
-						text_scan_data.r = Convert.ToDouble(text_get_string(text_scan_data.id));
+						text_scan_data.r = Convert.ToDouble(text.GetString(text_scan_data.id));
 					}
 				} /* end of number collection */
 				else
@@ -289,7 +289,7 @@ namespace RdpOutput
 							last_sym = this_sym;
 							text.InsertChar((char)text_char);
 							text_bot[text_top] = '\0';
-							this_sym = (ScanData)symbol_lookup_key(scan_table, text_get_string(start), null);
+							this_sym = (ScanData)scan_table.LookupKey(text.GetString(start), null);
 							if (this_sym == null)
 								break;
 
@@ -369,7 +369,7 @@ namespace RdpOutput
 										text.InsertChar((char)text_char);
 									} while (isxdigit(text_char));
 									text_top = 0;
-									long temp = strtol(text_get_string(start), null, 16);
+									long temp = strtol(text.GetString(start), null, 16);
 									text_top = start; /* scrub from buffer */
 									if (temp > 255)
 									{
@@ -392,7 +392,7 @@ namespace RdpOutput
 										text.GetChar();
 									} while (text_char >= '0' && text_char <= '7');
 									text_top = 0; /* change last character to a null */
-									temp = strtol(text_get_string(start), null, 8);
+									temp = strtol(text.GetString(start), null, 8);
 									text_top = start; /* scrub from buffer */
 									if (temp > 255)
 										text.Message(TEXT_WARNING_ECHO, "Octal escape sequence overflows eight bits: wrapping\n");
@@ -482,7 +482,7 @@ namespace RdpOutput
 											text.InsertChar((char)text_char);
 										} while (isxdigit(text_char));
 										text_top = 0; // change last character to a null
-										long temp = strtol(text_get_string(start), null, 16);
+										long temp = strtol(text.GetString(start), null, 16);
 										text_top = start; /* scrub from buffer */
 										if (temp > 255)
 											text.Message(TEXT_WARNING_ECHO, "Hex escape sequence overflows eight bits: wrapping\n");
@@ -503,7 +503,7 @@ namespace RdpOutput
 											text.GetChar();
 										} while (text_char >= '0' && text_char <= '7');
 										text_top = 0; // change last character to a null
-										temp = strtol(text_get_string(start), null, 8);
+										temp = strtol(text.GetString(start), null, 8);
 										text_top = start; /* scrub from buffer */
 										if (temp > 255)
 										{
@@ -544,7 +544,7 @@ namespace RdpOutput
 							text_scan_data.token = SCAN_P_IGNORE;
 							if (retain_comments)
 							{
-								InsertCommentBlock(text_get_string(start), last_column, scan_sequence_running_number);
+								InsertCommentBlock(text.GetString(start), last_column, scan_sequence_running_number);
 							}
 							else
 							{
@@ -599,7 +599,7 @@ namespace RdpOutput
 							text_scan_data.token = SCAN_P_IGNORE;
 							if (retain_comments)
 							{
-								InsertCommentBlock(text_get_string(start), last_column, scan_sequence_running_number);
+								InsertCommentBlock(text.GetString(start), last_column, scan_sequence_running_number);
 							}
 							else
 							{
@@ -678,7 +678,7 @@ namespace RdpOutput
 			}
 			d.token = token;
 			d.extended = extended;
-			symbol_insert_symbol(scan_table, d);
+			scan_table.InsertSymbol(d, text);
 		}
 
 		internal bool Test(string production, int valid, Set stop)

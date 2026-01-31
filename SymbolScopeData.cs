@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace RdpOutput
+﻿namespace RdpOutput
 {
 	internal class SymbolScopeData : Symbol
 	{
+#if NEVER
 		internal void assign(SymbolScopeData other)
 		{
 			next_hash = other.next_hash;
@@ -67,5 +65,6 @@ namespace RdpOutput
 				s = sym;
 			}
 		}
+#endif
 	}
 }

@@ -1,13 +1,19 @@
 ﻿using System;
-using static RdpOutput.Text;
 
 namespace RdpOutput
 {
 	internal class CompareHashPrint
 	{
-		internal int compare(string key, Symbol p)
+		private readonly Text text;
+
+		internal CompareHashPrint(Text text)
 		{
-			string r = text_get_string(p.id);
+			this.text = text;
+		}
+
+		internal int Compare(string key, Symbol p)
+		{
+			string r = text.GetString(p.id);
 			return string.Compare(key, r, StringComparison.Ordinal);
 		}
 
@@ -20,7 +26,7 @@ namespace RdpOutput
 		}
 #endif
 
-		internal int hash(int hash_prime, string str)
+		internal int Hash(int hash_prime, string str)
 		{
 			int hashnumber = 0;
 			if (str != null)

@@ -359,7 +359,7 @@ namespace RdpOutput
 			text_char = text_bot[--text_current];
 		}
 
-		internal static string text_get_string(int start)
+		internal string GetString(int start)
 		{
 			string s = "";
 			while (text_bot[start] != 0)

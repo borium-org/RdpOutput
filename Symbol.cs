@@ -1,60 +1,7 @@
-﻿using System;
-using static RdpOutput.Text;
-
-namespace RdpOutput
+﻿namespace RdpOutput
 {
 	internal class Symbol // : IComparable<Symbol>
 	{
-		internal static Symbol symbol_insert_symbol(SymbolTable table, Symbol symbol)
-		{
-			Symbol s = symbol;
-
-			s.hash = table.hash(table.hash_prime, text_get_string(symbol.id));
-			int hash_index = s.hash % table.hash_size;
-
-			s.next_hash = table.table[hash_index];
-			table.table[hash_index] = s;
-
-			s.last_hash.set(table.table[hash_index]);
-
-			// if this wasn't the start of a new list ...
-			if (s.next_hash != null)
-			{
-				// ...point old list next back at s
-				s.next_hash.last_hash.set(s.next_hash);
-			}
-
-			// now insert in scope list
-			s.next_scope = table.current.next_scope;
-			table.current.next_scope = s;
-
-			// set up pointer to scope block
-			s.scope = table.current;
-
-			return symbol;
-		}
-
-		/// <summary>
-		/// Lookup a symbol by id. Return null if it is not found
-		/// </summary>
-		/// <param name="table"></param>
-		/// <param name="key"></param>
-		/// <param name="scope"></param>
-		/// <returns></returns>
-		internal static Symbol symbol_lookup_key(SymbolTable table, String key, SymbolScopeData scope)
-		{
-			int hash = table.hash(table.hash_prime, key);
-			Symbol p = table.table[hash % table.hash_size];
-
-			// look for symbol with same hash and a true compare
-			while (!(p == null || table.compare(key, p) == 0 && !(p.scope != scope && scope != null)))
-			{
-				p = p.next_hash;
-			}
-
-			return p;
-		}
-
 #if NEVER
 		internal static SymbolScopeData symbol_new_scope(SymbolTable table, string id)
 		{
@@ -68,22 +15,6 @@ namespace RdpOutput
 			return p;
 		}
 #endif
-
-		internal static SymbolTable symbol_new_table(string name, int symbol_hashsize, int symbol_hashprime,
-				CompareHashPrint compareHashPrint, Text text)
-		{
-			SymbolTable temp = new SymbolTable();
-			SymbolScopeData scope = new SymbolScopeData();
-			scope.id = text.InsertString("Global");
-			temp.name = name;
-			temp.hash_size = symbol_hashsize;
-			temp.hash_prime = symbol_hashprime;
-			temp.compareHashPrint = compareHashPrint;
-			temp.table = new Symbol[symbol_hashsize];
-			temp.current = temp.scopes = scope;
-
-			return temp;
-		}
 
 		/** next symbol in hash list */
 		internal Symbol next_hash;
@@ -121,7 +52,6 @@ namespace RdpOutput
 		{
 			text_printf(id == 0 ? "Null symbol" : text_get_string(id));
 		}
-#endif
 
 		internal void unlinkSymbol()
 		{
@@ -133,5 +63,6 @@ namespace RdpOutput
 				s.next_hash.last_hash.set(s.last_hash.value());
 			}
 		}
+#endif
 	}
 }
