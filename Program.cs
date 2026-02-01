@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using static RdpOutput.CRT;
 using static RdpOutput.Scanner;
-using static RdpOutput.Text;
 using static RdpOutput.Text.TextMessageType;
 
 namespace RdpOutput
@@ -23,6 +22,8 @@ namespace RdpOutput
 			private Text text;
 			private Scanner scan;
 
+			private readonly bool enableRuleMessages = true;
+
 			internal Compiler(int max_text, int max_errors, int max_warnings, int tab_width,
 				bool case_insensitive, bool newline_visible, bool show_skips, bool symbol_echo,
 				string[] token_names)
@@ -35,16 +36,22 @@ namespace RdpOutput
 
 			private void EntryMessage()
 			{
-				StackTrace stackTrace = new StackTrace();
-				string callerName = stackTrace.GetFrame(1).GetMethod().Name;
-				text.Message(TEXT_INFO, $"Entered '{callerName}'\n");
+				if (enableRuleMessages)
+				{
+					StackTrace stackTrace = new StackTrace();
+					string callerName = stackTrace.GetFrame(1).GetMethod().Name;
+					text.Message(TEXT_INFO, $"Entered '{callerName}'\n");
+				}
 			}
 
 			private void ExitMessage()
 			{
-				StackTrace stackTrace = new StackTrace();
-				string callerName = stackTrace.GetFrame(1).GetMethod().Name;
-				text.Message(TEXT_INFO, $"Exited  '{callerName}'\n");
+				if (enableRuleMessages)
+				{
+					StackTrace stackTrace = new StackTrace();
+					string callerName = stackTrace.GetFrame(1).GetMethod().Name;
+					text.Message(TEXT_INFO, $"Exited  '{callerName}'\n");
+				}
 			}
 
 			internal void CompilationUnit()
@@ -166,9 +173,20 @@ namespace RdpOutput
 
 			internal void Compile()
 			{
-				CompilationUnit();
-				if (text.TotalErrors() != 0)
-					text.Message(TEXT_FATAL, $"{text.TotalErrors()} error{(text.TotalErrors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
+				try
+				{
+					CompilationUnit();
+					if (text.GetTotalErrors() != 0)
+						text.Message(TEXT_FATAL, $"{text.GetTotalErrors()} error{(text.GetTotalErrors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
+				}
+				catch (Exception)
+				{
+				}
+			}
+
+			internal string GetMessages()
+			{
+				return text.GetMessages();
 			}
 		}
 
@@ -197,6 +215,8 @@ namespace RdpOutput
 				if (!compiler.Open(streamReader, sourceFileName))
 					throw new Exception("unable to open source file");
 				compiler.Compile();
+				string messages = compiler.GetMessages();
+				Console.Write(messages);
 			}
 		}
 	}

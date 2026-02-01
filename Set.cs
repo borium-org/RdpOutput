@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using static RdpOutput.Text;
 
 namespace RdpOutput
 {
@@ -43,18 +42,18 @@ namespace RdpOutput
 		/// <param name="element_names"></param>
 		/// <param name="comments"></param>
 		/// <returns></returns>
-		internal static int SetPrintElement(int element, string[] element_names, bool comments)
+		internal static int SetPrintElement(int element, string[] element_names, bool comments, Text text)
 		{
 			if (element_names == null)
 			{
-				return text_printf(Convert.ToString(element));
+				return text.Printf(Convert.ToString(element));
 			}
 			else
 			{
 				string elementString = element_names[element];
 				if (!comments)
 					elementString = elementString.Split(' ')[0];
-				return text_printf(elementString);
+				return text.Printf(elementString);
 			}
 		}
 
@@ -115,7 +114,7 @@ namespace RdpOutput
 		}
 #endif
 
-		internal void Print(string[] element_names, int line_length)
+		internal void Print(string[] element_names, int line_length, Text text)
 		{
 			int column = 0;
 			bool not_first = false;
@@ -124,7 +123,7 @@ namespace RdpOutput
 			{
 				if (not_first)
 				{
-					column += text_printf(", ");
+					column += text.Printf(", ");
 				}
 				else
 				{
@@ -133,10 +132,10 @@ namespace RdpOutput
 
 				if (line_length != 0 && column >= line_length)
 				{
-					text_printf("\n");
+					text.Printf("\n");
 					column = 0;
 				}
-				column += SetPrintElement(element, element_names, true);
+				column += SetPrintElement(element, element_names, true, text);
 			}
 		}
 

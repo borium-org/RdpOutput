@@ -87,107 +87,107 @@ namespace RdpOutput
 		/// <summary>
 		/// Total number of errors this run
 		/// </summary>
-		private static int totalerrors = 0;
+		private int totalerrors = 0;
 
 		/// <summary>
 		/// Total number of warnings this run
 		/// </summary>
-		private static int totalwarnings = 0;
+		private int totalwarnings = 0;
 
 		/// <summary>
 		/// Total errors for this file
 		/// </summary>
-		private static int errors = 0;
+		private int errors = 0;
 
 		/// <summary>
 		/// Crash if error count exceeds this value
 		/// </summary>
-		private static int maxerrors = 25;
+		private int maxerrors = 25;
 
 		/// <summary>
 		/// Total warnings for this file
 		/// </summary>
-		private static int warnings = 0;
+		private int warnings = 0;
 
 		/// <summary>
 		/// Crash if warning count exceeds this value
 		/// </summary>
-		private static int maxwarnings = 100;
+		private int maxwarnings = 100;
 
 		/// <summary>
 		/// Filename
 		/// </summary>
-		private static string name = null;
+		private string name = null;
 
 		/// <summary>
 		/// Current line in this file
 		/// </summary>
-		private static int linenumber = 0;
+		private int linenumber = 0;
 
 		/// <summary>
 		/// Cumulative line_number
 		/// </summary>
-		private static int sequence_number = 0;
+		private int sequence_number = 0;
 
 		/// <summary>
 		/// TEXT_MESSAGES
 		/// </summary>
-		private static TextWriter messages = Console.Out;
+		private StringWriter messages = new StringWriter();
 
 		/// <summary>
 		/// Array of error positions
 		/// </summary>
-		private static int[] echo_pos = new int[MAX_ECHO];
+		private int[] echo_pos = new int[MAX_ECHO];
 
 		/// <summary>
 		/// current error number this line
 		/// </summary>
-		private static int echo_num = -1;
+		private int echo_num = -1;
 
 		/// <summary>
 		/// Current text character
 		/// </summary>
-		internal static int text_char = ' ';
+		internal int text_char = ' ';
 
 		/// <summary>
 		/// First character of current source line
 		/// </summary>
-		private static int first_char;
+		private int first_char;
 
 		/// <summary>
 		/// Last character of current source line
 		/// </summary>
-		private static int last_char;
+		private int last_char;
 
 		/// <summary>
 		/// Pointer to current source character
 		/// </summary>
-		internal static int text_current;
+		internal int text_current;
 
 		/// <summary>
 		/// Text array for storing id's and strings
 		/// </summary>
-		internal static char[] text_bot = null;
+		internal char[] text_bot = null;
 
 		/// <summary>
 		/// Top of text character
 		/// </summary>
-		internal static int text_top = 1;
+		internal int text_top = 1;
 
 		/// <summary>
 		/// Size of text buffer
 		/// </summary>
-		private static int maxtext;
+		private int maxtext;
 
 		/// <summary>
 		/// Tab expansion width
 		/// </summary>
-		private static int tabwidth;
+		private int tabwidth;
 
 		/// <summary>
 		/// Pointer to the last thing read by the scanner
 		/// </summary>
-		internal static ScanData text_scan_data;
+		internal ScanData text_scan_data;
 
 		/// <summary>
 		/// Enable line echoing
@@ -197,17 +197,17 @@ namespace RdpOutput
 		/// <summary>
 		/// Current file handle
 		/// </summary>
-		private static TextReader file;
+		private TextReader file;
 
 		/// <summary>
 		/// Head of file descriptor list
 		/// </summary>
-		private static SourceList source_descriptor_list;
+		private SourceList source_descriptor_list;
 
 		/// <summary>
 		/// First character in this symbol
 		/// </summary>
-		private static int symbol_first_char;
+		private int symbol_first_char;
 
 		internal Text(int max_text, int max_errors, int max_warnings, int tab_width)
 		{
@@ -221,7 +221,7 @@ namespace RdpOutput
 			text_current = last_char = first_char = maxtext;
 		}
 
-		internal static int text_column_number()
+		internal int GetColumnNumber()
 		{
 			return first_char - text_current;
 		}
@@ -313,7 +313,7 @@ namespace RdpOutput
 				{
 					if (feof(file))
 					{
-						text_close();
+						Close();
 						// pre-increment ready for pre-decrement!
 						text_current++;
 					}
@@ -327,7 +327,7 @@ namespace RdpOutput
 				{
 					if ((echo || echo_num >= 0) && linenumber > 0)
 					{
-						text_echo_line();
+						EchoLine();
 					}
 					sequence_number++;
 					linenumber++;
@@ -395,13 +395,13 @@ namespace RdpOutput
 		}
 #endif
 
-		internal int text_insert_integer(int n)
+		internal int InsertInteger(int n)
 		{
 			int start = text_top;
 			if (n > 9)
 			{
 				// recursively handle multi-digit numbers
-				text_insert_integer(n / 10);
+				InsertInteger(n / 10);
 			}
 			InsertChar((char)(n % 10 + '0'));
 			return start;
@@ -450,7 +450,7 @@ namespace RdpOutput
 		}
 #endif
 
-		internal static int text_line_number()
+		internal int GetLineNumber()
 		{
 			return linenumber;
 		}
@@ -468,7 +468,7 @@ namespace RdpOutput
 					echo_pos[echo_num] = first_char - text_current;
 				}
 			}
-			text_echo_line_number();
+			EchoLineNumber();
 			switch (type)
 			{
 				case TEXT_INFO:
@@ -509,17 +509,17 @@ namespace RdpOutput
 			messages.Write(message);
 			if (type == TEXT_FATAL || type == TEXT_FATAL_ECHO)
 			{
-				Environment.Exit(EXIT_FAILURE);
+				throw new Exception("Fatal error");
 			}
 			if (errors > maxerrors && maxerrors > 0)
 			{
 				messages.WriteLine("Fatal (" + (name == null ? "null file" : name) + "): too many errors");
-				Environment.Exit(EXIT_FAILURE);
+				throw new Exception("Too many errors");
 			}
 			if (warnings > maxwarnings && maxwarnings > 0)
 			{
 				messages.WriteLine("Fatal (" + (name == null ? "null file" : name) + "): too many warnings");
-				Environment.Exit(EXIT_FAILURE);
+				throw new Exception("Too many warnings");
 			}
 			return message.Length + 1;
 		}
@@ -592,7 +592,7 @@ namespace RdpOutput
 		}
 #endif
 
-		internal static int text_printf(string str)
+		internal int Printf(string str)
 		{
 			if (str != null)
 			{
@@ -615,12 +615,12 @@ namespace RdpOutput
 		}
 #endif
 
-		internal static int text_sequence_number()
+		internal int GetSequenceNumber()
 		{
 			return sequence_number;
 		}
 
-		internal int TotalErrors()
+		internal int GetTotalErrors()
 		{
 			return totalerrors;
 		}
@@ -632,7 +632,7 @@ namespace RdpOutput
 		}
 #endif
 
-		private void text_close()
+		private void Close()
 		{
 			if (file == null)
 				return;
@@ -659,14 +659,14 @@ namespace RdpOutput
 				if (echo)
 				{
 					Message(TEXT_INFO, "\n");
-					text_echo_line();
+					EchoLine();
 				}
 			}
 		}
 
-		private static void text_echo_line()
+		private void EchoLine()
 		{
-			text_echo_line_number();
+			EchoLineNumber();
 			// current input line is stored in reverse order at top of text buffer:
 			// print backwards from last character of text buffer
 			for (int temp = first_char - 1; temp > last_char; temp--)
@@ -680,7 +680,7 @@ namespace RdpOutput
 				// only the first MAX_ECHO errors have pointers
 				if (echo_num >= MAX_ECHO)
 					echo_num = MAX_ECHO - 1;
-				text_echo_line_number();
+				EchoLineNumber();
 				while (++num_count <= echo_num)
 				{
 					while (char_count++ < echo_pos[num_count] - 1)
@@ -695,7 +695,7 @@ namespace RdpOutput
 			echo_num = -1;
 		}
 
-		private static void text_echo_line_number()
+		private void EchoLineNumber()
 		{
 			if (linenumber != 0)
 			{
@@ -706,6 +706,11 @@ namespace RdpOutput
 			{
 				messages.Write("******: ");
 			}
+		}
+
+		internal string GetMessages()
+		{
+			return messages.ToString();
 		}
 	}
 }

@@ -2,8 +2,6 @@
 using static RdpOutput.CRT;
 using static RdpOutput.Program;
 using static RdpOutput.Set;
-using static RdpOutput.Symbol;
-using static RdpOutput.Text;
 using static RdpOutput.Text.TextMessageType;
 
 namespace RdpOutput
@@ -95,6 +93,59 @@ namespace RdpOutput
 		private readonly string[] scan_token_names = null;
 		private readonly ScanCommentBlock scan_comment_list = null;
 		private ScanCommentBlock scan_comment_list_end = null;
+
+		public ScanData text_scan_data
+		{
+			get
+			{
+				return text.text_scan_data;
+			}
+			set
+			{
+				text.text_scan_data = value;
+			}
+		}
+
+		public char[] text_bot
+		{
+			get
+			{
+				return text.text_bot;
+			}
+		}
+
+		public int text_top
+		{
+			get
+			{
+				return text.text_top;
+			}
+			set
+			{
+				text.text_top = value;
+			}
+		}
+
+		public int text_char
+		{
+			get
+			{
+				return text.text_char;
+			}
+			set
+			{
+				text.text_char = value;
+			}
+		}
+
+		public int text_current
+		{
+			get
+			{
+				return text.text_current;
+			}
+		}
+
 		private ScanCommentBlock last_comment_block;
 
 		private readonly SymbolTable scan_table;
@@ -143,7 +194,7 @@ namespace RdpOutput
 				{
 					if (scan_lexicalise_flag && text_char == '\n')
 					{
-						text_printf("\n");
+						text.Printf("\n");
 					}
 					text.GetChar();
 				}
@@ -151,8 +202,8 @@ namespace RdpOutput
 				if (text_scan_data.token != 0)
 					break;
 
-				last_column = text_column_number();
-				last_line_number = text_line_number();
+				last_column = text.GetColumnNumber();
+				last_line_number = text.GetLineNumber();
 				if (isalpha(text_char) || text_char == '_')
 				{
 					/* read an identifier into text buffer */
@@ -558,7 +609,7 @@ namespace RdpOutput
 					case SCAN_P_COMMENT:
 						nestable = (text_scan_data.extended == SCAN_P_COMMENT_NEST) || (text_scan_data.extended == SCAN_P_COMMENT_NEST_VISIBLE);
 						// /* We have to be a bit careful here: remember that the
-						// text.GetChar() routine puts a space in at the start of each
+						// GetChar() routine puts a space in at the start of each
 						// line to
 						// delay echoing of the line in the assembler */
 						do
@@ -612,11 +663,11 @@ namespace RdpOutput
 				}
 			} while (text_scan_data.token == SCAN_P_IGNORE);
 			text_scan_data.comment_block = last_comment_block;
-			if (scan_sequence_running_number != text_sequence_number())
-				InsertCommentBlock(null, 0, text_sequence_number());
-			scan_sequence_running_number = text_sequence_number();
+			if (scan_sequence_running_number != text.GetSequenceNumber())
+				InsertCommentBlock(null, 0, text.GetSequenceNumber());
+			scan_sequence_running_number = text.GetSequenceNumber();
 			text_scan_data.sourcefilename = sourceFileName;
-			text_scan_data.line_number = text_line_number();
+			text_scan_data.line_number = text.GetLineNumber();
 			if (scan_symbol_echo)
 			{
 				Console.WriteLine("Scan symbol echo");
@@ -634,7 +685,7 @@ namespace RdpOutput
 				// text_printf("\n****** %u tokens\n", scan_token_count - 1);
 				// else if (strcmp(text_scan_data.id, "EOLN") == 0)
 				{
-					text_printf("\n");
+					text.Printf("\n");
 					// scan_token_count --;
 				}
 				// else if (text_scan_data.token == SCAN_P_ID)
@@ -688,9 +739,9 @@ namespace RdpOutput
 				if (stop != null)
 				{
 					PrintScannedToken(production);
-					text_printf(" while expecting ");
-					SetPrintElement(valid, scan_token_names, true);
-					text_printf("\n");
+					text.Printf(" while expecting ");
+					SetPrintElement(valid, scan_token_names, true, text);
+					text.Printf("\n");
 					Skip(stop);
 				}
 				return false;
@@ -705,9 +756,9 @@ namespace RdpOutput
 				if (stop != null)
 				{
 					PrintScannedToken(production);
-					text_printf(" while expecting " + (SetCardinality(valid) == 1 ? "" : "one of "));
-					valid.Print(scan_token_names, 60);
-					text_printf("\n");
+					text.Printf(" while expecting " + (SetCardinality(valid) == 1 ? "" : "one of "));
+					valid.Print(scan_token_names, 60, text);
+					text.Printf("\n");
 					Skip(stop);
 				}
 				return false;
@@ -725,7 +776,7 @@ namespace RdpOutput
 			{
 				text.Message(TEXT_ERROR_ECHO, "Scanned ");
 			}
-			SetPrintElement(text_scan_data.token, scan_token_names, true);
+			SetPrintElement(text_scan_data.token, scan_token_names, true, text);
 		}
 
 		private void InsertCommentBlock(string pattern, int column, int sequence_number)
