@@ -64,6 +64,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompareHashPrint.cs" />
+    <Compile Include="Compiler.cs" />
+    <Compile Include="CompilerCommon.cs" />
     <Compile Include="CRT.cs" />
     <Compile Include="Pointer.cs" />
     <Compile Include="Program.cs" />
