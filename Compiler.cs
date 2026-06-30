@@ -19,7 +19,7 @@ namespace RdpOutput
 			"COMMENT_LINE", "COMMENT_LINE_VISIBLE", "EOF", "EOLN", "'\"'", "'\''", "'.'", "'/*'", "'//'",
 			"';'", "'Entity'" };
 
-		internal void CompilationUnit()
+		internal void RuleCompilationUnit()
 		{
 			EntryMessage();
 
@@ -29,7 +29,7 @@ namespace RdpOutput
 					while (true)
 					{
 						{
-							UsingDirective();
+							RuleUsingDirective();
 						}
 						if (!scan.Test("rdp_CompilationUnit_1", SCAN_P_ID, null))
 							break;
@@ -40,7 +40,7 @@ namespace RdpOutput
 					while (true)
 					{
 						{
-							EntityDeclaration();
+							RuleEntityDeclaration();
 						}
 						if (!scan.Test("rdp_CompilationUnit_3", RDP_T_Entity, null))
 							break;
@@ -52,7 +52,7 @@ namespace RdpOutput
 			ExitMessage();
 		}
 
-		private void EntityDeclaration()
+		private void RuleEntityDeclaration()
 		{
 			EntryMessage();
 
@@ -65,7 +65,7 @@ namespace RdpOutput
 			ExitMessage();
 		}
 
-		private void Identifier()
+		private void RuleIdentifier()
 		{
 			EntryMessage();
 
@@ -78,12 +78,12 @@ namespace RdpOutput
 			ExitMessage();
 		}
 
-		private void UsingDirective()
+		private void RuleUsingDirective()
 		{
 			EntryMessage();
 
 			{
-				Identifier();
+				RuleIdentifier();
 				if (scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 				{
 					while (true)
@@ -91,7 +91,7 @@ namespace RdpOutput
 						{
 							scan.Test("UsingDirective", RDP_T_46 /* . */, UsingDirective_stop);
 							scan.Scan();
-							Identifier();
+							RuleIdentifier();
 						}
 						if (!scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 							break;
@@ -131,7 +131,7 @@ namespace RdpOutput
 		{
 			try
 			{
-				CompilationUnit();
+				RuleCompilationUnit();
 				if (text.GetTotalErrors() != 0)
 					text.Message(TEXT_FATAL, $"{text.GetTotalErrors()} error{(text.GetTotalErrors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
 			}
