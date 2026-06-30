@@ -20,6 +20,15 @@ namespace RdpOutput
 			internal double r;
 			internal object p;
 
+			public ScanData()
+			{
+			}
+
+			public ScanData(ScanData from)
+			{
+				memcpy(from);
+			}
+
 			internal void Clear()
 			{
 				next_hash = null;
@@ -176,7 +185,7 @@ namespace RdpOutput
 			InsertCommentBlock("", 0, 0);
 		}
 
-		internal void Scan()
+		internal Ast_Token Scan()
 		{
 			int start;
 			ScanData s;
@@ -184,6 +193,14 @@ namespace RdpOutput
 			int nestlevel = 0;
 			int close;
 			int last = ' ';
+
+			// FIXME May fail later, but it is here for now. Return old ScanData
+			// because we know it belongs to the rule we are parsing. New ScanData
+			// may be a part of different rule or sub-rule of this rule, this is
+			// not decided yet by the grammar. We're just scanning next token here
+			// before we can even decide where it belongs to.
+			ScanData oldScanData = new ScanData(text_scan_data);
+
 			do
 			{
 				start = text_top;
@@ -710,6 +727,7 @@ namespace RdpOutput
 				// else
 				// text_printf("%s ", text_scan_data.id);
 			}
+			return new Ast_Token(oldScanData);
 		}
 
 #if NEVER

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using static RdpOutput.Text.TextMessageType;
 
@@ -6,7 +8,9 @@ namespace RdpOutput
 {
 	internal partial class Compiler
 	{
-		private Text text;
+		internal static Compiler instance;
+
+		internal Text text;
 		private Scanner scan;
 
 		private string sourceFileName;
@@ -18,6 +22,8 @@ namespace RdpOutput
 		{
 			text = new Text(max_text, max_errors, max_warnings, tab_width);
 			scan = new Scanner(case_insensitive, newline_visible, show_skips, symbol_echo, token_names, text);
+
+			instance = this;
 
 			LoadKeywords();
 		}
@@ -55,6 +61,61 @@ namespace RdpOutput
 		internal string GetMessages()
 		{
 			return text.GetMessages();
+		}
+	}
+
+	internal abstract partial class Ast
+	{
+		internal void Add(Ast ast)
+		{
+			astList.Add(ast);
+		}
+
+		internal void DebugPrint()
+		{
+			int indent = 0;
+			foreach (Ast ast in astList)
+			{
+				ast.DebugPrint(ref indent);
+			}
+		}
+
+		private void DebugPrint(ref int indent)
+		{
+			DebugPrint(indent);
+			indent++;
+			foreach (Ast ast in astList)
+			{
+				ast.DebugPrint(ref indent);
+			}
+			indent--;
+		}
+
+		private void DebugPrint(int indent)
+		{
+			for(int i = 0;i<indent;i++)
+				Debug.Write("\t");
+			PrintToken();
+			Debug.Write("\n");
+		}
+
+		protected abstract void PrintToken();
+
+		protected List<Ast> astList = new List<Ast>();
+	}
+
+	internal partial class Ast_Token : Ast
+	{
+		public Scanner.ScanData TextScanData { get; }
+
+		public Ast_Token(Scanner.ScanData text_scan_data)
+		{
+			TextScanData = new Scanner.ScanData(text_scan_data);
+		}
+
+		protected override void PrintToken()
+		{
+			Debug.Write($"Token {Compiler.instance.text.GetString(TextScanData.id)}");
 		}
 	}
 }

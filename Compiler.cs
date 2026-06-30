@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using static RdpOutput.Scanner;
 using static RdpOutput.Text.TextMessageType;
 
@@ -19,8 +22,10 @@ namespace RdpOutput
 			"COMMENT_LINE", "COMMENT_LINE_VISIBLE", "EOF", "EOLN", "'\"'", "'\''", "'.'", "'/*'", "'//'",
 			"';'", "'Entity'" };
 
-		internal void RuleCompilationUnit()
+		internal AstCompilationUnit RuleCompilationUnit()
 		{
+			AstCompilationUnit ast = new AstCompilationUnit();
+
 			EntryMessage();
 
 			{
@@ -29,7 +34,7 @@ namespace RdpOutput
 					while (true)
 					{
 						{
-							RuleUsingDirective();
+							ast.Add(RuleUsingDirective());
 						}
 						if (!scan.Test("rdp_CompilationUnit_1", SCAN_P_ID, null))
 							break;
@@ -40,7 +45,7 @@ namespace RdpOutput
 					while (true)
 					{
 						{
-							RuleEntityDeclaration();
+							ast.Add(RuleEntityDeclaration());
 						}
 						if (!scan.Test("rdp_CompilationUnit_3", RDP_T_Entity, null))
 							break;
@@ -50,59 +55,73 @@ namespace RdpOutput
 			}
 
 			ExitMessage();
+
+			return ast;
 		}
 
-		private void RuleEntityDeclaration()
+		private AstEntityDeclaration RuleEntityDeclaration()
 		{
+			AstEntityDeclaration ast = new AstEntityDeclaration();
+
 			EntryMessage();
 
 			{
 				scan.Test("EntityDeclaration", RDP_T_Entity, EntityDeclaration_stop);
-				scan.Scan();
+				ast.Add(scan.Scan());
 				scan.Test("EntityDeclaration", EntityDeclaration_stop, EntityDeclaration_stop);
 			}
 
 			ExitMessage();
+
+			return ast;
 		}
 
-		private void RuleIdentifier()
+		private AstIdentifier RuleIdentifier()
 		{
+			AstIdentifier ast = new AstIdentifier();
+
 			EntryMessage();
 
 			{
 				scan.Test("Identifier", SCAN_P_ID, Identifier_stop);
-				scan.Scan();
+				ast.Add(scan.Scan());
 				scan.Test("Identifier", Identifier_stop, Identifier_stop);
 			}
 
 			ExitMessage();
+
+			return ast;
 		}
 
-		private void RuleUsingDirective()
+		private AstUsingDirective RuleUsingDirective()
 		{
+			AstUsingDirective ast = new AstUsingDirective();
+
 			EntryMessage();
 
 			{
-				RuleIdentifier();
+				ast.Add(RuleIdentifier());
 				if (scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 				{
 					while (true)
 					{
 						{
 							scan.Test("UsingDirective", RDP_T_46 /* . */, UsingDirective_stop);
-							scan.Scan();
-							RuleIdentifier();
+							ast.Add(scan.Scan());
+							ast.Add(RuleIdentifier());
 						}
 						if (!scan.Test("rdp_UsingDirective_1", RDP_T_46 /* . */, null))
 							break;
 					}
 				}
 				scan.Test("UsingDirective", RDP_T_59 /* ; */, UsingDirective_stop);
-				scan.Scan();
+				ast.Add(scan.Scan());
 				scan.Test("UsingDirective", UsingDirective_stop, UsingDirective_stop);
 			}
 
 			ExitMessage();
+
+			return ast;
 		}
 
 		private void LoadKeywords()
@@ -131,13 +150,51 @@ namespace RdpOutput
 		{
 			try
 			{
-				RuleCompilationUnit();
+				AstCompilationUnit astCompilationUnit = RuleCompilationUnit();
 				if (text.GetTotalErrors() != 0)
+				{
 					text.Message(TEXT_FATAL, $"{text.GetTotalErrors()} error{(text.GetTotalErrors() == 1 ? "" : "s")} detected in source file {sourceFileName}\n");
+				}
+				else
+				{
+					astCompilationUnit.DebugPrint();
+				}
 			}
 			catch (Exception)
 			{
 			}
+		}
+	}
+
+	internal partial class AstCompilationUnit : Ast
+	{
+		protected override void PrintToken()
+		{
+			Debug.Write("CompilationUnit");
+		}
+	}
+
+	internal partial class AstEntityDeclaration : Ast
+	{
+		protected override void PrintToken()
+		{
+			Debug.Write("EntityDeclaration");
+		}
+	}
+
+	internal partial class AstIdentifier : Ast
+	{
+		protected override void PrintToken()
+		{
+			Debug.Write("Identifier");
+		}
+	}
+
+	internal partial class AstUsingDirective : Ast
+	{
+		protected override void PrintToken()
+		{
+			Debug.Write("UsingDirective");
 		}
 	}
 }
